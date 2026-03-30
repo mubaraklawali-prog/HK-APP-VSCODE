@@ -93,23 +93,28 @@ const generateRooms = () => {
 const populateDatabase = async () => {
   try {
     console.log('Checking existing rooms...');
-    const { data: existingRooms } = await supabase.from('rooms').select('id').limit(1);
+    const { data: existingRooms } = await supabase.from('rooms').select('number');
 
-    if (existingRooms && existingRooms.length > 0) {
-      console.log('Database already has data. Skipping population.');
+    const existingRoomNumbers = new Set(existingRooms?.map(room => room.number) || []);
+    console.log(`Found ${existingRoomNumbers.size} existing rooms`);
+
+    const allRooms = generateRooms();
+    const missingRooms = allRooms.filter(room => !existingRoomNumbers.has(room.number));
+
+    if (missingRooms.length === 0) {
+      console.log('All rooms already exist. No population needed.');
       return;
     }
 
-    console.log('Populating rooms...');
-    const rooms = generateRooms();
-    const { error: roomsError } = await supabase.from('rooms').insert(rooms);
+    console.log(`Adding ${missingRooms.length} missing rooms...`);
+    const { error: roomsError } = await supabase.from('rooms').insert(missingRooms);
 
     if (roomsError) {
       console.error('Error inserting rooms:', roomsError);
       return;
     }
 
-    console.log(`Successfully inserted ${rooms.length} rooms`);
+    console.log(`Successfully inserted ${missingRooms.length} rooms`);
 
     // Add some sample maintenance reports
     console.log('Adding sample maintenance reports...');
