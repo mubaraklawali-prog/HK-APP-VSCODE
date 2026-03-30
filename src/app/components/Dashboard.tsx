@@ -24,6 +24,11 @@ export default function Dashboard({ rooms, maintenanceReports = [] }: DashboardP
     return { total: floorRooms.length, cleaned, inProgress, notCleaned, activeIssues, occupied };
   };
 
+  const getFloorMaintenanceCount = (floor: number) => {
+    const floorRoomNumbers = getFloorRooms(floor).map(r => r.number);
+    return maintenanceReports.filter(r => r.status !== "Resolved" && floorRoomNumbers.includes(r.roomNumber)).length;
+  };
+
   return (
     <div className="p-5 space-y-6">
       {/* Top summary */}
@@ -52,6 +57,7 @@ export default function Dashboard({ rooms, maintenanceReports = [] }: DashboardP
             <span className="text-xs font-medium text-slate-500">Total Active Issues</span>
           </div>
           <div className="text-[28px] font-bold text-red-600">{totalActiveIssues}</div>
+          <div className="text-xs text-slate-500 mt-1">Maintenance Request</div>
         </div>
       </div>
 
@@ -60,65 +66,18 @@ export default function Dashboard({ rooms, maintenanceReports = [] }: DashboardP
         <h2 className="text-lg font-bold text-slate-800 mb-3">Floor Overview</h2>
         <div className="space-y-3">
           {[0, 1, 2, 3].map(floor => {
-            const stats = getFloorStats(floor);
-            const occupiedPct = stats.total > 0 ? Math.round((stats.occupied / stats.total) * 100) : 0;
-
-            const statusRows = [
-              stats.occupied > 0 ? (
-                <div key="occ" className="flex items-center gap-2">
-                  <Users className="w-3.5 h-3.5 shrink-0 text-green-600" strokeWidth={2.25} aria-hidden />
-                  <span className="text-xs text-slate-600">{stats.occupied} Occupied</span>
-                </div>
-              ) : null,
-              stats.notCleaned > 0 ? (
-                <div key="co" className="flex items-center gap-2">
-                  <LogOut className="w-3.5 h-3.5 shrink-0 text-fuchsia-600" strokeWidth={2.25} aria-hidden />
-                  <span className="text-xs text-slate-600">{stats.notCleaned} Checkout</span>
-                </div>
-              ) : null,
-              stats.activeIssues > 0 ? (
-                <div key="ai" className="flex items-center gap-2">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-600" strokeWidth={2.25} aria-hidden />
-                  <span className="text-xs text-slate-600">{stats.activeIssues} Active Issues</span>
-                </div>
-              ) : null,
-              stats.cleaned > 0 ? (
-                <div key="cl" className="flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 shrink-0 text-yellow-600" strokeWidth={2.25} aria-hidden />
-                  <span className="text-xs text-slate-600">{stats.cleaned} Cleaned</span>
-                </div>
-              ) : null,
-              stats.inProgress > 0 ? (
-                <div key="ip" className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 shrink-0 text-blue-600" strokeWidth={2.25} aria-hidden />
-                  <span className="text-xs text-slate-600">{stats.inProgress} In Progress</span>
-                </div>
-              ) : null
-            ].filter(Boolean);
+            const maintenanceCount = getFloorMaintenanceCount(floor);
 
             return (
               <div key={floor} className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[15px] font-semibold text-slate-700">{floorLabel(floor)}</div>
-                    <div className="text-xs text-slate-500">{stats.total} rooms</div>
+                    <div className="text-xs text-slate-500">{maintenanceCount} active issues</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Occupied</div>
-                    <div className="text-sm font-semibold text-green-700">{occupiedPct}%</div>
+                    <AlertCircle className="w-5 h-5 text-red-600" />
                   </div>
-                </div>
-
-                {/* Progress: % of rooms occupied */}
-                <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden mb-3">
-                  <div
-                    className="h-full bg-green-500 rounded-full transition-all"
-                    style={{ width: `${occupiedPct}%` }}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  {statusRows}
                 </div>
               </div>
             );
