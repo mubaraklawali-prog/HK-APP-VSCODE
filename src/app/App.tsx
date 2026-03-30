@@ -271,31 +271,43 @@ export default function App() {
   const maintenanceReportsRef = useRef(maintenanceReports);
   const missingItemReportsRef = useRef(missingItemReports);
 
-  // Load data from Supabase on mount
+// Load data from Supabase on mount and on auto-refresh
+  const loadData = async () => {
+    try {
+      const [roomsData, maintenanceData, missingItemsData] = await Promise.all([
+        fetchRooms(),
+        fetchMaintenanceReports(),
+        fetchMissingItemReports()
+      ]);
+
+      setRooms(roomsData.map(supabaseRoomToApp));
+      setMaintenanceReports(maintenanceData.map(supabaseMaintenanceToApp));
+      setMissingItemReports(missingItemsData.map(supabaseMissingItemToApp));
+    } catch (error) {
+      console.error("Error loading data:", error);
+      // Fallback to mock data if Supabase fails
+      setRooms(initializeRooms());
+      setMaintenanceReports(initializeMaintenance());
+      setMissingItemReports(initializeMissingItems());
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [roomsData, maintenanceData, missingItemsData] = await Promise.all([
-          fetchRooms(),
-          fetchMaintenanceReports(),
-          fetchMissingItemReports()
-        ]);
-
-        setRooms(roomsData.map(supabaseRoomToApp));
-        setMaintenanceReports(maintenanceData.map(supabaseMaintenanceToApp));
-        setMissingItemReports(missingItemsData.map(supabaseMissingItemToApp));
-      } catch (error) {
-        console.error("Error loading data:", error);
-        // Fallback to mock data if Supabase fails
-        setRooms(initializeRooms());
-        setMaintenanceReports(initializeMaintenance());
-        setMissingItemReports(initializeMissingItems());
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
+  }, []);
+
+  useEffect(() => {
+    const refreshInterval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadData();
+      }
+    }, 600000); // 10 minutes
+
+    return () => {
+      window.clearInterval(refreshInterval);
+    };
   }, []);
 
   useEffect(() => {
@@ -441,8 +453,26 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-      {/* Mobile App Shell */}
-      <div className="w-full max-w-[390px] h-[844px] bg-slate-100 shadow-[0_25px_50px_rgba(0,0,0,0.15)] rounded-[40px] overflow-hidden flex flex-col">
+      {/* Responsive App Shell for mobile + desktop */}
+      <div className="w-full max-w-[390px] lg:max-w-[1300px] min-h-[844px] lg:min-h-[720px] bg-slate-100 shadow-[0_25px_50px_rgba(0,0,0,0.15)] rounded-[40px] lg:rounded-[30px] overflow-hidden flex flex-col lg:flex-row">
+        <div className="hidden lg:flex lg:w-[280px] lg:flex-col lg:bg-white lg:border-r lg:border-slate-100 lg:p-4">
+          <h1 className="text-sm font-bold uppercase tracking-wide text-slate-700 mb-4">HOUSEKEEPING PRO</h1>
+          <p className="text-xs text-slate-500">Quick nav:</p>
+          <ul className="mt-2 space-y-2 text-xs font-medium text-slate-600">
+            <li>Home</li>
+            <li>Tasks</li>
+            <li>Maintenance</li>
+            <li>Missing Items</li>
+            <li>AI Report</li>
+          </ul>
+        </div>
+        <div className="flex-1 bg-slate-100 lg:bg-transparent flex flex-col">
+          {/* Top Bar */}
+          <div className="h-12 lg:h-14 bg-white/90 backdrop-blur-sm border-b border-slate-100 flex items-center justify-center z-10">
+            <span className="text-xs lg:text-sm font-bold uppercase tracking-widest text-slate-400">
+              HOUSEKEEPING PRO
+            </span>
+          </div>
         {/* Top Bar */}
         <div className="h-10 bg-white/90 backdrop-blur-sm border-b border-slate-100 flex items-center justify-center z-10">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
