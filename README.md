@@ -1,7 +1,6 @@
+# App replication request
 
-  # App replication request
-
-  This is a code bundle for App replication request. The original project is available at https://www.figma.com/design/dEeTmpGB9dHwCBX9NmxYXZ/App-replication-request.
+This is a code bundle for App replication request. The original project is available at https://www.figma.com/design/dEeTmpGB9dHwCBX9NmxYXZ/App-replication-request.
 
 ## Setup
 
@@ -39,4 +38,3 @@ Run `npm run dev` to start the development server.
 - **AI Report**: Operational reports with date range filtering
 
 All data is stored in Supabase with real-time synchronization.
-  
