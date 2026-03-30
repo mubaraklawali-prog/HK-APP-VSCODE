@@ -1,14 +1,15 @@
 import { Building2, Users, AlertCircle, LogOut, Sparkles, Clock } from "lucide-react";
-import { Room, floorLabel } from "@/app/App";
+import { Room, MaintenanceReport, floorLabel } from "@/app/App";
 
 interface DashboardProps {
   rooms: Room[];
+  maintenanceReports?: MaintenanceReport[];
 }
 
-export default function Dashboard({ rooms }: DashboardProps) {
+export default function Dashboard({ rooms, maintenanceReports = [] }: DashboardProps) {
   const totalRooms = rooms.length;
   const occupiedRooms = rooms.filter(r => r.status === "Occupied").length;
-  const activeIssuesRooms = rooms.filter(r => r.status === "Active Issues").length;
+  const totalActiveIssues = maintenanceReports.filter(r => r.status !== "Resolved").length;
 
   const getFloorRooms = (floor: number) => rooms.filter(r => r.floor === floor);
 
@@ -50,7 +51,7 @@ export default function Dashboard({ rooms }: DashboardProps) {
             <AlertCircle className="w-4 h-4 text-red-600" />
             <span className="text-xs font-medium text-slate-500">Total Active Issues</span>
           </div>
-          <div className="text-[28px] font-bold text-red-600">{activeIssuesRooms}</div>
+          <div className="text-[28px] font-bold text-red-600">{totalActiveIssues}</div>
         </div>
       </div>
 

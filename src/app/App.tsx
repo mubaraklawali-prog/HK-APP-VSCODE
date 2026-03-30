@@ -461,7 +461,7 @@ export default function App() {
             </div>
           ) : (
             <>
-              {activeTab === "home" && <Dashboard rooms={rooms} />}
+              {activeTab === "home" && <Dashboard rooms={rooms} maintenanceReports={maintenanceReports} />}
               {activeTab === "tasks" && <TaskTracker rooms={rooms} updateRoom={handleUpdateRoom} />}
               {activeTab === "maint" && (
                 <MaintenanceLog
