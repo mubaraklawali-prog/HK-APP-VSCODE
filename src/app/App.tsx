@@ -454,7 +454,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       {/* Responsive App Shell for mobile + desktop */}
-      <div className="w-full max-w-[390px] lg:max-w-[1300px] min-h-[844px] lg:min-h-[720px] bg-slate-100 shadow-[0_25px_50px_rgba(0,0,0,0.15)] rounded-[40px] lg:rounded-[30px] overflow-hidden flex flex-col lg:flex-row">
+      <div className="w-full max-w-[1300px] min-h-[844px] bg-slate-100 shadow-[0_25px_50px_rgba(0,0,0,0.15)] rounded-[30px] overflow-hidden flex flex-col lg:flex-row">
         <div className="hidden lg:flex lg:w-[280px] lg:flex-col lg:bg-white lg:border-r lg:border-slate-100 lg:p-4">
           <h1 className="text-sm font-bold uppercase tracking-wide text-slate-700 mb-4">HOUSEKEEPING PRO</h1>
           <p className="text-xs text-slate-500">Quick nav:</p>
@@ -473,14 +473,8 @@ export default function App() {
               HOUSEKEEPING PRO
             </span>
           </div>
-        {/* Top Bar */}
-        <div className="h-10 bg-white/90 backdrop-blur-sm border-b border-slate-100 flex items-center justify-center z-10">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            HOUSEKEEPING PRO
-          </span>
-        </div>
 
-        {/* Content Area */}
+          {/* Content Area */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center h-full">
