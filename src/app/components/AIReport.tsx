@@ -10,11 +10,13 @@ interface AIReportProps {
 export default function AIReport({ rooms, maintenanceReports }: AIReportProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [generatedAt, setGeneratedAt] = useState<Date | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectingDate, setSelectingDate] = useState<"from" | "to" | null>(null);
+
+  // Clear any cached demo reports on component mount
+  useEffect(() => {
+    setReport(null);
+  }, []);
 
   // Initialize with today and 7 days ago
   const [fromDate, setFromDate] = useState<Date>(() => {
