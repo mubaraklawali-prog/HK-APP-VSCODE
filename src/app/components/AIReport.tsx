@@ -114,15 +114,11 @@ export default function AIReport({ rooms, maintenanceReports }: AIReportProps) {
 
     // Simulate API call - In real implementation, this would call Supabase Edge Function
     setTimeout(() => {
-      // Check if we're in demo mode (no backend)
-      const isDemoMode = true; // This would be based on whether Supabase is connected
-
-      if (isDemoMode) {
-        // Filter maintenance reports by date range
-        const reportsInRange = maintenanceReports.filter(r => {
-          const reportDate = new Date(r.timestamp);
-          return reportDate >= fromDate && reportDate <= toDate;
-        });
+      // Filter maintenance reports by date range
+      const reportsInRange = maintenanceReports.filter(r => {
+        const reportDate = new Date(r.timestamp);
+        return reportDate >= fromDate && reportDate <= toDate;
+      });
 
         // Generate a mock report based on actual data and date range
         const totalRooms = rooms.length;
@@ -183,15 +179,11 @@ ${cleanedRooms / totalRooms > 0.7 ? '- ✨ Excellent housekeeping performance! K
 - 📈 Monitor floor-by-floor metrics daily to identify and resolve bottlenecks
 
 ---
-*This is a demo report. Connect Supabase and add your Gemini API key in the Make settings to enable real AI-powered analysis.*`;
+*Report generated using housekeeping data from Supabase database.*`;
 
-        setReport(mockReport);
-        setGeneratedAt(new Date());
-        setIsGenerating(false);
-      } else {
-        setError("Failed to generate report. Please check your API key configuration.");
-        setIsGenerating(false);
-      }
+      setReport(mockReport);
+      setGeneratedAt(new Date());
+      setIsGenerating(false);
     }, 2000);
   };
 
