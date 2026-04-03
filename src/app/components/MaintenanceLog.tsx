@@ -155,7 +155,7 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
       <Dialog.Root open={showForm} onOpenChange={setShowForm}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
-          <Dialog.Content className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-50 max-w-[390px] mx-auto shadow-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+          <Dialog.Content className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-50 max-w-[390px] md:max-w-[720px] w-[95vw] mx-auto shadow-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
             <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
 
             <div className="space-y-5">
@@ -244,7 +244,7 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
       <Dialog.Root open={selectedReport !== null} onOpenChange={(open) => !open && setSelectedReport(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
-          <Dialog.Content className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-50 max-w-[390px] mx-auto shadow-2xl" aria-describedby={undefined}>
+          <Dialog.Content className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-50 max-w-[390px] md:max-w-[720px] w-[95vw] mx-auto shadow-2xl" aria-describedby={undefined}>
             <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
 
             {selectedReport && (

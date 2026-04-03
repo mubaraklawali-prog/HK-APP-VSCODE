@@ -106,7 +106,7 @@ export async function createMaintenanceReport(report: MaintenanceReportInsert) {
   try {
     const { data, error } = await supabase
       .from("maintenance_reports")
-      .insert([{ ...report, timestamp: new Date().toISOString() }])
+      .insert([report])
       .select()
       .single();
     
@@ -155,7 +155,7 @@ export async function createMissingItemReport(report: MissingItemReportInsert) {
   try {
     const { data, error } = await supabase
       .from("missing_items_reports")
-      .insert([{ ...report, timestamp: new Date().toISOString() }])
+      .insert([report])
       .select()
       .single();
     

@@ -65,6 +65,17 @@ export interface MissingItemReport {
 }
 
 // Helper functions to convert between Supabase and app types
+function parseSupabaseTimestamp(value: string | null | undefined): Date {
+  if (!value) return new Date();
+
+  // Supabase/Postgres timestamp columns may come without a timezone suffix (e.g. "2026-04-03T13:00:00").
+  // Treat these as UTC to avoid local timezone drift (e.g. immediate 1h offsets for some users).
+  const asString = String(value).trim();
+  const hasZone = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(asString);
+  const normalized = hasZone ? asString : `${asString.endsWith("Z") ? asString : `${asString}Z`}`;
+  return new Date(normalized);
+}
+
 function supabaseRoomToApp(room: RoomRow): Room {
   return {
     id: room.id,
@@ -72,7 +83,7 @@ function supabaseRoomToApp(room: RoomRow): Room {
     floor: room.floor,
     status: room.status as RoomStatus,
     steward: room.steward,
-    lastCleaned: room.last_cleaned ? new Date(room.last_cleaned) : null,
+    lastCleaned: room.last_cleaned ? parseSupabaseTimestamp(room.last_cleaned) : null,
     photo: room.photo_url
   };
 }
@@ -85,8 +96,8 @@ function supabaseMaintenanceToApp(report: MaintenanceReportRow): MaintenanceRepo
     description: report.description || "",
     status: report.status as MaintenanceStatus,
     photo: report.photo_url,
-    timestamp: new Date(report.timestamp || new Date().toISOString()),
-    resolvedAt: report.resolved_at ? new Date(report.resolved_at) : undefined
+    timestamp: parseSupabaseTimestamp(report.timestamp),
+    resolvedAt: report.resolved_at ? parseSupabaseTimestamp(report.resolved_at) : undefined
   };
 }
 
