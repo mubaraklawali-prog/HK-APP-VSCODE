@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles, AlertCircle, Copy, Check, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Room, MaintenanceReport } from "@/app/App";
 
@@ -12,6 +12,9 @@ export default function AIReport({ rooms, maintenanceReports }: AIReportProps) {
   const [report, setReport] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectingDate, setSelectingDate] = useState<"from" | "to" | null>(null);
+  const [generatedAt, setGeneratedAt] = useState<Date | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Clear any cached demo reports on component mount
   useEffect(() => {
@@ -32,6 +35,12 @@ export default function AIReport({ rooms, maintenanceReports }: AIReportProps) {
   });
 
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+
+  const totalRooms = rooms.length;
+  const cleanedRooms = rooms.filter(r => r.status === "Cleaned").length;
+  const checkoutRooms = rooms.filter(r => r.status === "Checkout").length;
+  const inProgressRooms = rooms.filter(r => r.status === "In Progress").length;
+  const activeIssuesRooms = maintenanceReports.filter(r => r.status !== "Resolved").length;
 
   const formatDateRange = () => {
     const formatDate = (date: Date) => {
@@ -208,6 +217,25 @@ ${cleanedRooms / totalRooms > 0.7 ? '- ✨ Excellent housekeeping performance! K
           <div>
             <h2 className="text-lg font-bold text-slate-800">AI Status Report</h2>
             <p className="text-[13px] text-slate-500">Generate intelligent summaries for any date range</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] mb-1">Total Rooms</div>
+            <div className="text-lg font-semibold text-slate-900">{totalRooms}</div>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] mb-1">Cleaned</div>
+            <div className="text-lg font-semibold text-slate-900">{cleanedRooms}</div>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] mb-1">Checkout</div>
+            <div className="text-lg font-semibold text-slate-900">{checkoutRooms}</div>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] mb-1">Active Issues</div>
+            <div className="text-lg font-semibold text-slate-900">{activeIssuesRooms}</div>
           </div>
         </div>
       </div>
