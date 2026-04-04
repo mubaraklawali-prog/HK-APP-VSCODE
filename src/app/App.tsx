@@ -463,85 +463,74 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-      {/* Responsive App Shell for mobile + desktop */}
-      <div className="w-full max-w-[1300px] min-h-[844px] bg-slate-100 shadow-[0_25px_50px_rgba(0,0,0,0.15)] rounded-[30px] overflow-hidden flex flex-col lg:flex-row">
-        <div className="hidden lg:flex lg:w-[280px] lg:flex-col lg:bg-white lg:border-r lg:border-slate-100 lg:p-4">
-          <h1 className="text-sm font-bold uppercase tracking-wide text-slate-700 mb-4">HOUSEKEEPING PRO</h1>
-          <p className="text-xs text-slate-500">Quick nav:</p>
-          <ul className="mt-2 space-y-2 text-xs font-medium text-slate-600">
-            <li>Home</li>
-            <li>Tasks</li>
-            <li>Maintenance</li>
-            <li>Missing Items</li>
-            <li>AI Report</li>
-          </ul>
-        </div>
-        <div className="flex-1 bg-slate-100 lg:bg-transparent flex flex-col">
-          {/* Top Bar */}
-          <div className="h-12 lg:h-14 bg-white/90 backdrop-blur-sm border-b border-slate-100 flex items-center justify-center z-10">
-            <span className="text-xs lg:text-sm font-bold uppercase tracking-widest text-slate-400">
-              HOUSEKEEPING PRO
-            </span>
+    <div className="min-h-screen bg-slate-100 px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-82px)] max-w-[1100px] flex-col gap-4">
+        <div className="overflow-hidden rounded-[32px] bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-50/90 px-5 py-4 backdrop-blur-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Housekeeping Pro</p>
+                <h1 className="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">Housekeeping Dashboard</h1>
+              </div>
+              <p className="text-sm text-slate-500">Live overview of room occupancy and open issues.</p>
+            </div>
           </div>
 
-          {/* Content Area */}
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-2"></div>
-                <p className="text-sm text-slate-600">Loading data...</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              {activeTab === "home" && <Dashboard rooms={rooms} maintenanceReports={maintenanceReports} />}
-              {activeTab === "tasks" && <TaskTracker rooms={rooms} updateRoom={handleUpdateRoom} />}
-              {activeTab === "maint" && (
-                <MaintenanceLog
-                  reports={maintenanceReports}
-                  addReport={handleAddMaintenanceReport}
-                  updateReport={handleUpdateMaintenanceReport}
-                  rooms={rooms}
-                />
-              )}
-              {activeTab === "items" && (
-                <MissingItems
-                  reports={missingItemReports}
-                  addReport={handleAddMissingItemReport}
-                  rooms={rooms}
-                />
-              )}
-              {activeTab === "ai" && <AIReport rooms={rooms} maintenanceReports={maintenanceReports} />}
-            </>
-          )}
-        </div>
-
-        {/* Bottom Navigation */}
-        <div className="h-20 bg-white border-t border-slate-100 flex items-center justify-around pb-2">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="flex flex-col items-center gap-1 transition-colors"
-              >
-                <div className={isActive ? "bg-slate-100 rounded-xl p-1.5" : ""}>
-                  <Icon
-                    className={`w-6 h-6 ${isActive ? "text-slate-900 stroke-[2.5]" : "text-slate-400 stroke-2"}`}
-                  />
+          <div className="min-h-[calc(100vh-220px)] overflow-y-auto bg-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+            {loading ? (
+              <div className="flex min-h-[180px] items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-2"></div>
+                  <p className="text-sm text-slate-600">Loading data...</p>
                 </div>
-                <span className={`text-[10px] font-medium ${isActive ? "text-slate-900" : "text-slate-400"}`}>
-                  {tab.label}
-                </span>
-              </button>
-            );
-          })}
+              </div>
+            ) : (
+              <>
+                {activeTab === "home" && <Dashboard rooms={rooms} maintenanceReports={maintenanceReports} />}
+                {activeTab === "tasks" && <TaskTracker rooms={rooms} updateRoom={handleUpdateRoom} />}
+                {activeTab === "maint" && (
+                  <MaintenanceLog
+                    reports={maintenanceReports}
+                    addReport={handleAddMaintenanceReport}
+                    updateReport={handleUpdateMaintenanceReport}
+                    rooms={rooms}
+                  />
+                )}
+                {activeTab === "items" && (
+                  <MissingItems
+                    reports={missingItemReports}
+                    addReport={handleAddMissingItemReport}
+                    rooms={rooms}
+                  />
+                )}
+                {activeTab === "ai" && <AIReport rooms={rooms} maintenanceReports={maintenanceReports} />}
+              </>
+            )}
+          </div>
         </div>
+
+        <div className="rounded-[28px] bg-white border border-slate-200 px-3 py-3 shadow-sm sm:px-4">
+          <div className="grid grid-cols-5 gap-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-[10px] font-medium transition ${
+                    isActive
+                      ? "bg-slate-900 text-white"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  }`}
+                >
+                  <Icon className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-400"}`} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

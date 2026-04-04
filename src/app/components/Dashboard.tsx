@@ -31,108 +31,75 @@ export default function Dashboard({ rooms, maintenanceReports = [] }: DashboardP
   };
 
   return (
-    <div className="p-5 space-y-6">
-      {/* Top summary */}
-      <div className="space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Building2 className="w-4 h-4 text-slate-500" />
-              <span className="text-xs font-medium text-slate-500">Total Rooms</span>
-            </div>
-            <div className="text-[28px] font-bold text-slate-900">{totalRooms}</div>
-          </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-[28px] bg-white p-5 shadow-sm">
+          <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Total Rooms</div>
+          <div className="mt-4 text-4xl font-semibold text-slate-900 sm:text-5xl">{totalRooms}</div>
+        </div>
 
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-green-600" />
-              <span className="text-xs font-medium text-slate-500">Total Occupied</span>
-            </div>
-            <div className="text-[28px] font-bold text-green-600">{occupiedRooms}</div>
-          </div>
+        <div className="rounded-[28px] bg-white p-5 shadow-sm">
+          <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Total Occupied</div>
+          <div className="mt-4 text-4xl font-semibold text-emerald-700 sm:text-5xl">{occupiedRooms}</div>
+        </div>
 
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-4 h-4 text-red-600" />
-              <span className="text-xs font-medium text-slate-500">Total Active Issues</span>
-            </div>
-            <div className="text-[28px] font-bold text-red-600">{totalActiveIssues}</div>
-          </div>
+        <div className="rounded-[28px] bg-white p-5 shadow-sm">
+          <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Total Active Issues</div>
+          <div className="mt-4 text-4xl font-semibold text-rose-600 sm:text-5xl">{totalActiveIssues}</div>
         </div>
       </div>
 
-      {/* Floor Overview */}
-      <div>
-        <h2 className="text-lg font-bold text-slate-800 mb-3">Floor Overview</h2>
-        <div className="space-y-3">
+      <section className="space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Floor Overview</h2>
+            <p className="mt-1 text-sm text-slate-500">Review occupancy and room progress by floor.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
           {[0, 1, 2, 3].map(floor => {
             const stats = getFloorStats(floor);
+            const detailRows = [
+              { label: "Occupied", value: stats.occupied },
+              { label: "Cleaned", value: stats.cleaned },
+              { label: "Active Issues", value: stats.activeIssues },
+              { label: "Checkout", value: stats.notCleaned },
+              { label: "In Progress", value: stats.inProgress }
+            ].filter(row => row.value > 0);
 
             return (
-              <div key={floor} className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
+              <div key={floor} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="text-[15px] font-semibold text-slate-700">{floorLabel(floor)}</div>
-                    <div className="text-xs text-slate-500">{stats.total} Rooms</div>
+                    <p className="text-sm font-semibold text-slate-900">{floorLabel(floor)}</p>
+                    <p className="mt-1 text-sm text-slate-500">{stats.total} rooms</p>
                   </div>
-                  <div className="text-xs font-semibold text-slate-700">{stats.occupiedPercentage}% occupied</div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-2xl">
-                    <Home className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <div className="text-[11px] text-slate-500">Occupied</div>
-                      <div className="font-semibold text-slate-900">{stats.occupied}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 p-3 bg-green-50 rounded-2xl">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    <div>
-                      <div className="text-[11px] text-slate-500">Cleaned</div>
-                      <div className="font-semibold text-slate-900">{stats.cleaned}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-2xl">
-                    <LogOut className="w-5 h-5 text-yellow-600" />
-                    <div>
-                      <div className="text-[11px] text-slate-500">Checkout</div>
-                      <div className="font-semibold text-slate-900">{stats.notCleaned}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-2xl">
-                    <Clock className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <div className="text-[11px] text-slate-500">In Progress</div>
-                      <div className="font-semibold text-slate-900">{stats.inProgress}</div>
-                    </div>
+                  <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+                    {stats.occupiedPercentage}% occupied
                   </div>
                 </div>
 
-                {stats.activeIssues > 0 && (
-                  <div className="mt-3 flex items-center gap-2 p-3 bg-red-50 rounded-2xl text-xs text-slate-700">
-                    <AlertCircle className="w-5 h-5 text-red-600" />
-                    <span>{stats.activeIssues} Active Issues</span>
-                  </div>
-                )}
+                <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-slate-900 transition-all duration-300"
+                    style={{ width: `${stats.occupiedPercentage}%` }}
+                  />
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {detailRows.map((row) => (
+                    <div key={row.label} className="flex items-center justify-between text-sm text-slate-700">
+                      <span>{row.label}</span>
+                      <span className="font-semibold text-slate-900">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* Total Active Issues */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm">
-        <div className="flex items-center gap-2 mb-2">
-          <AlertCircle className="w-4 h-4 text-red-600" />
-          <span className="text-xs font-medium text-slate-500">Total Active Issues</span>
-        </div>
-        <div className="text-[28px] font-bold text-red-600">{totalActiveIssues}</div>
-        <div className="text-xs text-slate-500 mt-1">Maintenance Request</div>
-      </div>
+      </section>
     </div>
   );
 }
