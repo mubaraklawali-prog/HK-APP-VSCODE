@@ -4,10 +4,11 @@ import { MissingItemReport, Room, stewards, availableItems, floorLabel } from "@
 interface MissingItemsProps {
   reports: MissingItemReport[];
   addReport: (report: Omit<MissingItemReport, "id" | "timestamp">) => void;
+  updateReport: (id: string, updates: Partial<MissingItemReport>) => void;
   rooms: Room[];
 }
 
-export default function MissingItems({ reports, addReport, rooms }: MissingItemsProps) {
+export default function MissingItems({ reports, addReport, updateReport, rooms }: MissingItemsProps) {
   const [roomNumber, setRoomNumber] = useState("");
   const [selectedSteward, setSelectedSteward] = useState("");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -34,6 +35,14 @@ export default function MissingItems({ reports, addReport, rooms }: MissingItems
       setSelectedItems([]);
       setComment("");
     }
+  };
+
+  const handleMarkProvided = (id: string) => {
+    const updates: Partial<MissingItemReport> = {
+      provided: true,
+      providedAt: new Date()
+    };
+    updateReport(id, updates);
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -148,14 +157,32 @@ export default function MissingItems({ reports, addReport, rooms }: MissingItems
           <div key={report.id} className="bg-white rounded-2xl p-3.5 shadow-sm">
             <div className="flex items-start justify-between mb-2">
               <div className="text-[15px] font-semibold text-slate-700">Room {report.roomNumber}</div>
-              <div className="text-[11px] text-slate-400">{report.steward}</div>
+              <div className="flex items-center gap-2">
+                {report.provided ? (
+                  <div className="text-[11px] font-semibold px-2 py-1 rounded-full bg-green-50 text-green-800">
+                    ✓ Provided
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleMarkProvided(report.id)}
+                    className="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                  >
+                    Mark Provided
+                  </button>
+                )}
+                <div className="text-[11px] text-slate-400">{report.steward}</div>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-1.5 mb-2">
               {report.items.map(item => (
                 <span
                   key={item}
-                  className="px-2 py-0.5 bg-orange-50 text-orange-800 text-[11px] font-semibold rounded-full"
+                  className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${
+                    report.provided
+                      ? "bg-green-50 text-green-800"
+                      : "bg-orange-50 text-orange-800"
+                  }`}
                 >
                   {item}
                 </span>
@@ -168,8 +195,15 @@ export default function MissingItems({ reports, addReport, rooms }: MissingItems
               </p>
             )}
 
-            <div className="text-[11px] text-slate-400">
-              {formatTimeAgo(report.timestamp)}
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] text-slate-400">
+                {formatTimeAgo(report.timestamp)}
+              </div>
+              {report.provided && report.providedAt && (
+                <div className="text-[11px] font-semibold text-green-600">
+                  Provided {formatTimeAgo(report.providedAt)}
+                </div>
+              )}
             </div>
           </div>
         ))}

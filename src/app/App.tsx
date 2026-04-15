@@ -27,7 +27,7 @@ type Tab = "home" | "tasks" | "maint" | "items" | "ai";
 
 export type RoomStatus = "Cleaned" | "Checkout" | "In Progress" | "Active Issues" | "Occupied";
 export type MaintenanceStatus = "Pending" | "In Progress" | "Resolved";
-export type IssueType = "Tap/Plumbing" | "Shower" | "AC/Heating" | "Lighting" | "TV/Electronics" | "Other";
+export type IssueType = "Tap/Plumbing" | "Shower" | "AC/Heating" | "Lighting" | "TV/Electronics" | "Furniture" | "Other";
 
 export function floorLabel(floor: number): string {
   return floor === 0 ? "Ground Floor" : `Floor ${floor}`;
@@ -62,6 +62,8 @@ export interface MissingItemReport {
   items: string[];
   comment: string;
   timestamp: Date;
+  provided?: boolean;
+  providedAt?: Date;
 }
 
 // Helper functions to convert between Supabase and app types
@@ -216,7 +218,7 @@ const initializeRooms = (): Room[] => {
 };
 
 const initializeMaintenance = (): MaintenanceReport[] => {
-  const issues: IssueType[] = ["Tap/Plumbing", "Shower", "AC/Heating", "Lighting", "TV/Electronics", "Other"];
+  const issues: IssueType[] = ["Tap/Plumbing", "Shower", "AC/Heating", "Lighting", "TV/Electronics", "Furniture", "Other"];
   const statuses: MaintenanceStatus[] = ["Pending", "In Progress", "Resolved"];
 
   return [
@@ -464,19 +466,19 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-82px)] max-w-[1100px] flex-col gap-4">
+      <div className="mx-auto flex min-h-[calc(100vh-120px)] max-w-[1100px] flex-col gap-4 pb-20">
         <div className="overflow-hidden rounded-[32px] bg-white shadow-sm">
           <div className="border-b border-slate-200 bg-slate-50/90 px-5 py-4 backdrop-blur-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Housekeeping Pro</p>
-                <h1 className="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">Housekeeping Dashboard</h1>
+                <h1 className="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">Dankani Housekeeping</h1>
               </div>
               <p className="text-sm text-slate-500">Live overview of room occupancy and open issues.</p>
             </div>
           </div>
 
-          <div className="min-h-[calc(100vh-220px)] overflow-y-auto bg-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+          <div className="min-h-[calc(100vh-280px)] overflow-y-auto bg-slate-100 px-4 py-5 sm:px-6 sm:py-6">
             {loading ? (
               <div className="flex min-h-[180px] items-center justify-center">
                 <div className="text-center">
@@ -500,6 +502,11 @@ export default function App() {
                   <MissingItems
                     reports={missingItemReports}
                     addReport={handleAddMissingItemReport}
+                    updateReport={(id, updates) => {
+                      setMissingItemReports(prev => prev.map(report =>
+                        report.id === id ? { ...report, ...updates } : report
+                      ));
+                    }}
                     rooms={rooms}
                   />
                 )}
@@ -508,7 +515,9 @@ export default function App() {
             )}
           </div>
         </div>
+      </div>
 
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
         <div className="rounded-[28px] bg-white border border-slate-200 px-3 py-3 shadow-sm sm:px-4">
           <div className="grid grid-cols-5 gap-2">
             {tabs.map((tab) => {

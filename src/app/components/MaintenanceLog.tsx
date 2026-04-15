@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Camera, Droplet, ShowerHead, Wind, Lightbulb, Tv, MoreHorizontal, X } from "lucide-react";
+import { Plus, Camera, Droplet, ShowerHead, Wind, Lightbulb, Tv, MoreHorizontal, Sofa, X } from "lucide-react";
 import { MaintenanceReport, MaintenanceStatus, IssueType, Room, floorLabel } from "@/app/App";
 import * as Dialog from "@radix-ui/react-dialog";
 
@@ -22,6 +22,7 @@ const issueIcons: Record<IssueType, React.ElementType> = {
   "AC/Heating": Wind,
   "Lighting": Lightbulb,
   "TV/Electronics": Tv,
+  "Furniture": Sofa,
   "Other": MoreHorizontal
 };
 
@@ -30,9 +31,61 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
   const [roomNumber, setRoomNumber] = useState("");
   const [issueType, setIssueType] = useState<IssueType | null>(null);
   const [description, setDescription] = useState("");
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<MaintenanceReport | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editIssueType, setEditIssueType] = useState<IssueType | null>(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editPhotoDataUrl, setEditPhotoDataUrl] = useState<string | null>(null);
 
-  const issueTypes: IssueType[] = ["Tap/Plumbing", "Shower", "AC/Heating", "Lighting", "TV/Electronics", "Other"];
+  const issueTypes: IssueType[] = ["Tap/Plumbing", "Shower", "AC/Heating", "Lighting", "TV/Electronics", "Furniture", "Other"];
+
+  const resetNewReportForm = () => {
+    setRoomNumber("");
+    setIssueType(null);
+    setDescription("");
+    setPhotoDataUrl(null);
+  };
+
+  const handlePhotoFileChange = (file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoDataUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditPhotoFileChange = (file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setEditPhotoDataUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const startEdit = (report: MaintenanceReport) => {
+    setEditMode(true);
+    setEditIssueType(report.issueType);
+    setEditDescription(report.description);
+    setEditPhotoDataUrl(report.photo ?? null);
+  };
+
+  const handleSaveEdit = () => {
+    if (!selectedReport || !editIssueType || !editDescription) return;
+
+    const updates: Partial<MaintenanceReport> = {
+      issueType: editIssueType,
+      description: editDescription,
+      photo: editPhotoDataUrl
+    };
+
+    updateReport(selectedReport.id, updates);
+
+    setSelectedReport(prev => prev ? { ...prev, ...updates } as MaintenanceReport : prev);
+    setEditMode(false);
+  };
 
   const handleSubmit = () => {
     if (roomNumber && issueType && description) {
@@ -41,11 +94,9 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
         issueType,
         description,
         status: "Pending",
-        photo: null
+        photo: photoDataUrl
       });
-      setRoomNumber("");
-      setIssueType(null);
-      setDescription("");
+      resetNewReportForm();
       setShowForm(false);
     }
   };
@@ -152,7 +203,10 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
       </div>
 
       {/* New Report Form Dialog */}
-      <Dialog.Root open={showForm} onOpenChange={setShowForm}>
+      <Dialog.Root open={showForm} onOpenChange={(open) => {
+        setShowForm(open);
+        if (!open) resetNewReportForm();
+      }}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
           <Dialog.Content className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-50 max-w-[390px] md:max-w-[720px] w-[95vw] mx-auto shadow-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
@@ -222,8 +276,26 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
               {/* Photo */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Photo</label>
-                <div className="border-2 border-dashed border-slate-300 rounded-xl w-20 h-20 flex items-center justify-center bg-slate-50">
-                  <Camera className="w-6 h-6 text-slate-400" />
+                <div className="space-y-3">
+                  <label className="group cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-slate-400">
+                    <Camera className="w-5 h-5 text-slate-500" />
+                    <span>{photoDataUrl ? "Change photo" : "Snap or upload photo"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => handlePhotoFileChange(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+
+                  {photoDataUrl && (
+                    <img
+                      src={photoDataUrl}
+                      alt="Report preview"
+                      className="w-full max-h-64 rounded-2xl object-cover border border-slate-200"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -256,19 +328,109 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
                   </Dialog.Close>
                 </div>
 
-                <div>
-                  <div className="text-sm font-semibold text-slate-700 mb-1">Issue Type</div>
-                  <div className="text-sm text-slate-600">{selectedReport.issueType}</div>
-                </div>
+                {editMode ? (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-1">Edit Issue Type</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {issueTypes.map(type => {
+                          const Icon = issueIcons[type];
+                          return (
+                            <button
+                              key={type}
+                              onClick={() => setEditIssueType(type)}
+                              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 ${
+                                editIssueType === type
+                                  ? "bg-slate-900 text-white"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                              {type}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                <div>
-                  <div className="text-sm font-semibold text-slate-700 mb-1">Description</div>
-                  <div className="text-sm text-slate-600">{selectedReport.description}</div>
-                </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-1">Edit Description</div>
+                      <textarea
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        rows={4}
+                        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 resize-none"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-1">Edit Photo</div>
+                      <div className="space-y-3">
+                        <label className="group cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-slate-400">
+                          <Camera className="w-5 h-5 text-slate-500" />
+                          <span>{editPhotoDataUrl ? "Change photo" : "Snap or upload photo"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={(e) => handleEditPhotoFileChange(e.target.files?.[0] ?? null)}
+                          />
+                        </label>
+
+                        {editPhotoDataUrl && (
+                          <img
+                            src={editPhotoDataUrl}
+                            alt="Edit preview"
+                            className="w-full max-h-64 rounded-2xl object-cover border border-slate-200"
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleSaveEdit}
+                        className="min-w-[120px] rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                      >
+                        Save changes
+                      </button>
+                      <button
+                        onClick={() => setEditMode(false)}
+                        className="min-w-[120px] rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-1">Issue Type</div>
+                      <div className="text-sm text-slate-600">{selectedReport.issueType}</div>
+                    </div>
+
+                    <div>
+                      <div className="text-sm font-semibold text-slate-700 mb-1">Description</div>
+                      <div className="text-sm text-slate-600">{selectedReport.description}</div>
+                    </div>
+
+                    {selectedReport.photo && (
+                      <div>
+                        <div className="text-sm font-semibold text-slate-700 mb-2">Photo</div>
+                        <img
+                          src={selectedReport.photo}
+                          alt="Report photo"
+                          className="w-full rounded-2xl object-cover border border-slate-200"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {(["Pending", "In Progress", "Resolved"] as MaintenanceStatus[]).map(status => (
                       <button
                         key={status}
@@ -282,6 +444,12 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
                         {status}
                       </button>
                     ))}
+                    <button
+                      onClick={() => startEdit(selectedReport)}
+                      className="px-3 py-1.5 rounded-full bg-slate-900 text-xs font-semibold text-white transition-colors hover:bg-slate-800"
+                    >
+                      Edit
+                    </button>
                   </div>
                 </div>
 
