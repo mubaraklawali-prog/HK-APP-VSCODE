@@ -517,8 +517,8 @@ export default function App() {
         </div>
       </div>
 
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
-        <div className="rounded-[28px] bg-white border border-slate-200 px-3 py-3 shadow-sm sm:px-4">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-transparent px-4 pb-4">
+        <div className="w-full rounded-t-[28px] bg-white border-t border-slate-200 px-3 py-3 shadow-sm sm:px-4">
           <div className="grid grid-cols-5 gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
