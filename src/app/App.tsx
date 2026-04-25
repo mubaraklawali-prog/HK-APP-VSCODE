@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { LayoutDashboard, ClipboardList, Wrench, PackageSearch, Sparkles } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Wrench, PackageSearch, Sparkles, Search, Bell } from "lucide-react";
 import Dashboard from "@/app/components/Dashboard";
 import TaskTracker from "@/app/components/TaskTracker";
 import MaintenanceLog from "@/app/components/MaintenanceLog";
 import MissingItems from "@/app/components/MissingItems";
 import AIReport from "@/app/components/AIReport";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import {
   REMINDER_MS,
   playAttentionSound,
@@ -17,6 +19,8 @@ import {
   createMaintenanceReport,
   updateMaintenanceReport,
   createMissingItemReport,
+  updateMissingItemReport,
+  uploadReportImage,
   updateRoom,
   type RoomRow,
   type MaintenanceReportRow,
@@ -55,15 +59,24 @@ export interface MaintenanceReport {
   resolvedAt?: Date;
 }
 
+export interface MissingItemReportPayload {
+  roomNumber: string;
+  steward: string;
+  items: string[];
+  comment: string;
+  photo?: File | string | null;
+}
+
 export interface MissingItemReport {
   id: string;
   roomNumber: string;
   steward: string;
   items: string[];
   comment: string;
-  timestamp: Date;
+  photo: string | null;
   provided?: boolean;
   providedAt?: Date;
+  timestamp: Date;
 }
 
 // Helper functions to convert between Supabase and app types
@@ -110,6 +123,9 @@ function supabaseMissingItemToApp(report: MissingItemReportRow): MissingItemRepo
     steward: report.steward,
     items: report.items,
     comment: report.comment || "",
+    photo: report.photo_url || null,
+    provided: report.provided ?? false,
+    providedAt: report.provided_at ? parseSupabaseTimestamp(report.provided_at) : undefined,
     timestamp: new Date(report.timestamp || new Date().toISOString())
   };
 }
@@ -280,6 +296,7 @@ export default function App() {
   const [maintenanceReports, setMaintenanceReports] = useState<MaintenanceReport[]>([]);
   const [missingItemReports, setMissingItemReports] = useState<MissingItemReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   const maintenanceReportsRef = useRef(maintenanceReports);
   const missingItemReportsRef = useRef(missingItemReports);
@@ -380,18 +397,40 @@ export default function App() {
     }
   };
 
-  const handleAddMaintenanceReport = async (report: Omit<MaintenanceReport, "id" | "timestamp">) => {
+  const handleAddMaintenanceReport = async (report: Omit<MaintenanceReport, "id" | "timestamp"> & { photo?: File | string | null }) => {
     try {
-      const supabaseReport = {
+      const supabaseReport: Record<string, any> = {
         room_number: report.roomNumber,
         issue_type: report.issueType,
         description: report.description,
         status: report.status,
-        photo_url: report.photo
+        photo_url: typeof report.photo === "string" ? report.photo : null
       };
 
       const newReport = await createMaintenanceReport(supabaseReport);
-      const appReport = supabaseMaintenanceToApp(newReport);
+      let appReport = supabaseMaintenanceToApp(newReport);
+
+      if (report.photo instanceof File) {
+        try {
+          const ext = report.photo.type.split("/").pop() || "jpg";
+          const path = `maintenance/${newReport.id}.${ext}`;
+          const publicUrl = await uploadReportImage(report.photo, path);
+          const updatedReport = await updateMaintenanceReport(newReport.id, { photo_url: publicUrl });
+          appReport = supabaseMaintenanceToApp(updatedReport);
+          toast({
+            title: "Photo uploaded successfully",
+            description: "The maintenance report photo has been saved.",
+            variant: "success",
+          });
+        } catch (uploadError) {
+          console.error("Error uploading photo:", uploadError);
+          toast({
+            title: "Photo upload failed",
+            description: "The report was saved but the photo could not be uploaded.",
+            variant: "destructive",
+          });
+        }
+      }
 
       setMaintenanceReports(prev => [appReport, ...prev]);
       playAttentionSound();
@@ -401,21 +440,45 @@ export default function App() {
       const newReport: MaintenanceReport = {
         ...report,
         id: `maint-${Date.now()}`,
-        timestamp: new Date()
+        timestamp: new Date(),
+        photo: typeof report.photo === "string" ? report.photo : null
       };
       setMaintenanceReports(prev => [newReport, ...prev]);
       playAttentionSound();
     }
   };
 
-  const handleUpdateMaintenanceReport = async (id: string, updates: Partial<MaintenanceReport>) => {
+  const handleUpdateMaintenanceReport = async (id: string, updates: Partial<MaintenanceReport> & { photo?: File | string | null }) => {
     try {
       const supabaseUpdates: Record<string, any> = {};
       if (updates.status) supabaseUpdates.status = updates.status;
       if (updates.resolvedAt) supabaseUpdates.resolved_at = updates.resolvedAt.toISOString();
+      if (typeof updates.photo === "string") supabaseUpdates.photo_url = updates.photo;
 
       const updatedReport = await updateMaintenanceReport(id, supabaseUpdates);
-      const appReport = supabaseMaintenanceToApp(updatedReport);
+      let appReport = supabaseMaintenanceToApp(updatedReport);
+
+      if (updates.photo instanceof File) {
+        try {
+          const ext = updates.photo.type.split("/").pop() || "jpg";
+          const path = `maintenance/${id}.${ext}`;
+          const publicUrl = await uploadReportImage(updates.photo, path);
+          const finalReport = await updateMaintenanceReport(id, { photo_url: publicUrl });
+          appReport = supabaseMaintenanceToApp(finalReport);
+          toast({
+            title: "Photo uploaded successfully",
+            description: "The maintenance report photo has been updated.",
+            variant: "success",
+          });
+        } catch (uploadError) {
+          console.error("Error uploading photo:", uploadError);
+          toast({
+            title: "Photo upload failed",
+            description: "The report was updated but the photo could not be uploaded.",
+            variant: "destructive",
+          });
+        }
+      }
 
       setMaintenanceReports(prev => prev.map(report =>
         report.id === id ? appReport : report
@@ -429,17 +492,85 @@ export default function App() {
     }
   };
 
-  const handleAddMissingItemReport = async (report: Omit<MissingItemReport, "id" | "timestamp">) => {
+  const handleUpdateMissingItemReport = async (id: string, updates: Partial<MissingItemReport> & { photo?: File | string | null }) => {
     try {
-      const supabaseReport = {
+      const supabaseUpdates: Record<string, any> = {};
+      if (updates.provided !== undefined) supabaseUpdates.provided = updates.provided;
+      if (updates.providedAt) supabaseUpdates.provided_at = updates.providedAt.toISOString();
+      if (updates.comment !== undefined) supabaseUpdates.comment = updates.comment;
+      if (typeof updates.photo === "string") supabaseUpdates.photo_url = updates.photo;
+
+      const updatedRow = await updateMissingItemReport(id, supabaseUpdates);
+      let appReport = supabaseMissingItemToApp(updatedRow);
+
+      if (updates.photo instanceof File) {
+        try {
+          const ext = updates.photo.type.split("/").pop() || "jpg";
+          const path = `missing/${id}.${ext}`;
+          const publicUrl = await uploadReportImage(updates.photo, path);
+          const finalRow = await updateMissingItemReport(id, { photo_url: publicUrl });
+          appReport = supabaseMissingItemToApp(finalRow);
+          toast({
+            title: "Photo uploaded successfully",
+            description: "The missing item report photo has been updated.",
+            variant: "success",
+          });
+        } catch (uploadError) {
+          console.error("Error uploading photo:", uploadError);
+          toast({
+            title: "Photo upload failed",
+            description: "The report was updated but the photo could not be uploaded.",
+            variant: "destructive",
+          });
+        }
+      }
+
+      setMissingItemReports(prev => prev.map(report =>
+        report.id === id ? appReport : report
+      ));
+    } catch (error) {
+      console.error("Error updating missing item report:", error);
+      setMissingItemReports(prev => prev.map(report =>
+        report.id === id ? { ...report, ...updates } : report
+      ));
+    }
+  };
+
+  const handleAddMissingItemReport = async (report: Omit<MissingItemReportPayload, "photo"> & { photo?: File | string | null }) => {
+    try {
+      const supabaseReport: Record<string, any> = {
         room_number: report.roomNumber,
         steward: report.steward,
         items: report.items,
-        comment: report.comment
+        comment: report.comment,
+        photo_url: typeof report.photo === "string" ? report.photo : null,
+        provided: false
       };
 
       const newReport = await createMissingItemReport(supabaseReport);
-      const appReport = supabaseMissingItemToApp(newReport);
+      let appReport = supabaseMissingItemToApp(newReport);
+
+      if (report.photo instanceof File) {
+        try {
+          const ext = report.photo.type.split("/").pop() || "jpg";
+          const path = `missing/${newReport.id}.${ext}`;
+          const publicUrl = await uploadReportImage(report.photo, path);
+          const updatedReport = await updateMissingItemReport(newReport.id, { photo_url: publicUrl });
+          appReport = supabaseMissingItemToApp(updatedReport);
+          toast({
+            title: "Photo uploaded successfully",
+            description: "The missing item report photo has been saved.",
+            variant: "success",
+          });
+        } catch (uploadError) {
+          console.error("Error uploading photo:", uploadError);
+          toast({
+            title: "Photo upload failed",
+            description: "The report was saved but the photo could not be uploaded.",
+            variant: "destructive",
+          });
+        }
+      }
 
       setMissingItemReports(prev => [appReport, ...prev]);
       playAttentionSound();
@@ -449,7 +580,9 @@ export default function App() {
       const newReport: MissingItemReport = {
         ...report,
         id: `missing-${Date.now()}`,
-        timestamp: new Date()
+        timestamp: new Date(),
+        photo: typeof report.photo === "string" ? report.photo : null,
+        provided: false
       };
       setMissingItemReports(prev => [newReport, ...prev]);
       playAttentionSound();
@@ -465,83 +598,83 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-120px)] max-w-[1100px] flex-col gap-4 pb-20">
-        <div className="overflow-hidden rounded-[32px] bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-slate-50/90 px-5 py-4 backdrop-blur-sm">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Housekeeping Pro</p>
-                <h1 className="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">Dankani Housekeeping</h1>
-              </div>
-              <p className="text-sm text-slate-500">Live overview of room occupancy and open issues.</p>
+    <div className="bg-background text-on-surface min-h-screen pb-20">
+      {/* TopAppBar */}
+      <header className="bg-background w-full top-0 sticky z-40 flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-slate-200 overflow-hidden ring-2 ring-white shadow-sm">
+            <img alt="Staff Profile" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB57B3SUr-EsoWmSTwhWzRHDEyo5SUipepCjwjaFjtXEBu_08sdmsxHVUtRaxNWR5k8Viy0vT6BB2tcQlV0ci2omleGBRVpPhLeGU9mMk-4rqHCxWaZ7RsEpDxD046vyh96yzkmyXJwwKojvmI3XNosoni3V1FzkOUYVYhXgPT3fBwRLY2YMvHIF3vZqF24gnTcyatXGJ5tuIRzRcPOPiFaooIX66sp-T7_PKYHT5w-lvkb8e02VfGgn41CG1DHmEKDIfJq_gSopVk" />
+          </div>
+          <h1 className="font-extrabold tracking-tight text-[#006e2a] dark:text-[#00c853] flex flex-col leading-none text-sm">
+            DANKANI<span className="block text-[10px] leading-tight font-bold tracking-[0.15em] opacity-80 mt-[-2px]">HOUSEKEEPING</span>
+          </h1>
+        </div>
+        <div className="flex items-center gap-1">
+          <button className="p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+            <Search className="w-5 h-5" />
+          </button>
+          <button className="p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+            <Bell className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
+
+      <main className="px-4 py-2 max-w-7xl mx-auto space-y-4">
+        {loading ? (
+          <div className="flex min-h-[180px] items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-2"></div>
+              <p className="text-sm text-slate-600">Loading data...</p>
             </div>
           </div>
-
-          <div className="min-h-[calc(100vh-280px)] overflow-y-auto bg-slate-100 px-4 py-5 sm:px-6 sm:py-6">
-            {loading ? (
-              <div className="flex min-h-[180px] items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-2"></div>
-                  <p className="text-sm text-slate-600">Loading data...</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                {activeTab === "home" && <Dashboard rooms={rooms} maintenanceReports={maintenanceReports} />}
-                {activeTab === "tasks" && <TaskTracker rooms={rooms} updateRoom={handleUpdateRoom} />}
-                {activeTab === "maint" && (
-                  <MaintenanceLog
-                    reports={maintenanceReports}
-                    addReport={handleAddMaintenanceReport}
-                    updateReport={handleUpdateMaintenanceReport}
-                    rooms={rooms}
-                  />
-                )}
-                {activeTab === "items" && (
-                  <MissingItems
-                    reports={missingItemReports}
-                    addReport={handleAddMissingItemReport}
-                    updateReport={(id, updates) => {
-                      setMissingItemReports(prev => prev.map(report =>
-                        report.id === id ? { ...report, ...updates } : report
-                      ));
-                    }}
-                    rooms={rooms}
-                  />
-                )}
-                {activeTab === "ai" && <AIReport rooms={rooms} maintenanceReports={maintenanceReports} />}
-              </>
+        ) : (
+          <>
+            {activeTab === "home" && <Dashboard rooms={rooms} maintenanceReports={maintenanceReports} />}
+            {activeTab === "tasks" && <TaskTracker rooms={rooms} updateRoom={handleUpdateRoom} />}
+            {activeTab === "maint" && (
+              <MaintenanceLog
+                reports={maintenanceReports}
+                addReport={handleAddMaintenanceReport}
+                updateReport={handleUpdateMaintenanceReport}
+                rooms={rooms}
+              />
             )}
-          </div>
-        </div>
-      </div>
+            {activeTab === "items" && (
+              <MissingItems
+                reports={missingItemReports}
+                addReport={handleAddMissingItemReport}
+                updateReport={handleUpdateMissingItemReport}
+                rooms={rooms}
+              />
+            )}
+            {activeTab === "ai" && <AIReport rooms={rooms} maintenanceReports={maintenanceReports} />}
+          </>
+        )}
+      </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-transparent px-4 pb-4">
-        <div className="w-full rounded-t-[28px] bg-white border-t border-slate-200 px-3 py-3 shadow-sm sm:px-4">
-          <div className="grid grid-cols-5 gap-2">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+      {/* BottomNavBar */}
+      <nav className="fixed bottom-0 left-0 w-full glass-nav flex justify-around items-center px-4 py-2.5 pb-safe z-50 rounded-t-[2.5rem] shadow-[0_-8px_30px_rgb(0,0,0,0.06)] border-t border-slate-50">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-[10px] font-medium transition ${
-                    isActive
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                  }`}
-                >
-                  <Icon className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-400"}`} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col items-center justify-center px-4 py-2 nav-item-transition ${
+                isActive
+                  ? "bg-primary text-white rounded-2xl"
+                  : "text-slate-400"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+      <Toaster />
     </div>
   );
 }

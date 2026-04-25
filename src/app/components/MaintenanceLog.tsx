@@ -32,10 +32,12 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
   const [issueType, setIssueType] = useState<IssueType | null>(null);
   const [description, setDescription] = useState("");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [selectedReport, setSelectedReport] = useState<MaintenanceReport | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editIssueType, setEditIssueType] = useState<IssueType | null>(null);
   const [editDescription, setEditDescription] = useState("");
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
   const [editPhotoDataUrl, setEditPhotoDataUrl] = useState<string | null>(null);
 
   const issueTypes: IssueType[] = ["Tap/Plumbing", "Shower", "AC/Heating", "Lighting", "TV/Electronics", "Furniture", "Other"];
@@ -49,6 +51,7 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
 
   const handlePhotoFileChange = (file: File | null) => {
     if (!file) return;
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       setPhotoDataUrl(reader.result as string);
@@ -58,6 +61,7 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
 
   const handleEditPhotoFileChange = (file: File | null) => {
     if (!file) return;
+    setEditPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       setEditPhotoDataUrl(reader.result as string);
@@ -75,10 +79,10 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
   const handleSaveEdit = () => {
     if (!selectedReport || !editIssueType || !editDescription) return;
 
-    const updates: Partial<MaintenanceReport> = {
+    const updates: Partial<MaintenanceReport> & { photo?: File | string | null } = {
       issueType: editIssueType,
       description: editDescription,
-      photo: editPhotoDataUrl
+      photo: editPhotoFile ?? editPhotoDataUrl
     };
 
     updateReport(selectedReport.id, updates);
@@ -94,7 +98,7 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
         issueType,
         description,
         status: "Pending",
-        photo: photoDataUrl
+        photo: photoFile ?? photoDataUrl
       });
       resetNewReportForm();
       setShowForm(false);
@@ -279,11 +283,10 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
                 <div className="space-y-3">
                   <label className="group cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-slate-400">
                     <Camera className="w-5 h-5 text-slate-500" />
-                    <span>{photoDataUrl ? "Change photo" : "Snap or upload photo"}</span>
+                    <span>{photoDataUrl ? "Change uploaded image" : "Upload image from gallery"}</span>
                     <input
                       type="file"
                       accept="image/*"
-                      capture="environment"
                       className="hidden"
                       onChange={(e) => handlePhotoFileChange(e.target.files?.[0] ?? null)}
                     />
@@ -368,16 +371,14 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
                       <div className="space-y-3">
                         <label className="group cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-slate-400">
                           <Camera className="w-5 h-5 text-slate-500" />
-                          <span>{editPhotoDataUrl ? "Change photo" : "Snap or upload photo"}</span>
+                          <span>{editPhotoDataUrl ? "Change uploaded image" : "Upload image from gallery"}</span>
                           <input
                             type="file"
                             accept="image/*"
-                            capture="environment"
-                            className="hidden"
-                            onChange={(e) => handleEditPhotoFileChange(e.target.files?.[0] ?? null)}
+                            className="sr-only"
+                            onChange={handleEditPhotoFileChange}
                           />
                         </label>
-
                         {editPhotoDataUrl && (
                           <img
                             src={editPhotoDataUrl}

@@ -2,16 +2,16 @@
 
 :root {
   --font-size: 16px;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
+  --background: #f1f5f9;
+  --foreground: #1e293b;
   --card: #ffffff;
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
+  --primary: #1ebc56;
+  --primary-foreground: #ffffff;
+  --secondary: #bc0000;
+  --secondary-foreground: #ffffff;
   --muted: #ececf0;
   --muted-foreground: #717182;
   --accent: #e9ebef;
@@ -39,6 +39,53 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* New design colors */
+  --inverse-surface: #2e3132;
+  --surface-bright: #f8fafb;
+  --secondary-fixed-dim: #ffb4a8;
+  --error: #ba1a1a;
+  --surface: #f8fafb;
+  --secondary-fixed-variant: #930000;
+  --on-secondary-fixed-variant: #930000;
+  --on-secondary-fixed: #410000;
+  --primary-fixed-dim: #3ce36a;
+  --tertiary: #64748b;
+  --on-surface: #1e293b;
+  --inverse-on-surface: #eff1f2;
+  --surface-container-high: #e6e8e9;
+  --surface-container-low: #f2f4f5;
+  --on-primary-container: #004c1b;
+  --on-error-container: #93000a;
+  --error-container: #ffdad6;
+  --tertiary-fixed: #d7e4ec;
+  --tertiary-container: #a2afb6;
+  --on-tertiary-fixed-variant: #3c494f;
+  --outline-variant: #bbcbb8;
+  --on-primary-fixed-variant: #00531e;
+  --on-error: #ffffff;
+  --on-background: #1e293b;
+  --surface-container-highest: #e2e8f0;
+  --inverse-primary: #3ce36a;
+  --on-secondary-container: #fffbff;
+  --on-secondary: #ffffff;
+  --surface-variant: #e1e3e4;
+  --primary-fixed: #69ff87;
+  --surface-tint: #1ebc56;
+  --on-tertiary-fixed: #111d23;
+  --primary-container: #1ebc56;
+  --surface-dim: #d8dadb;
+  --on-tertiary: #ffffff;
+  --surface-container: #eceeef;
+  --outline: #6c7b6a;
+  --on-surface-variant: #475569;
+  --on-primary: #ffffff;
+  --on-primary-fixed: #002108;
+  --on-tertiary-container: #364349;
+  --tertiary-fixed-dim: #bbc8d0;
+  --secondary-container: #e6190e;
+  --secondary-fixed: #ffdad4;
+  --surface-container-lowest: #ffffff;
 }
 
 .dark {

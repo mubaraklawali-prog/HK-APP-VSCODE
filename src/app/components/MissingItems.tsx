@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Camera } from "lucide-react";
 import { MissingItemReport, Room, stewards, availableItems, floorLabel } from "@/app/App";
 
 interface MissingItemsProps {
@@ -13,6 +14,8 @@ export default function MissingItems({ reports, addReport, updateReport, rooms }
   const [selectedSteward, setSelectedSteward] = useState("");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [comment, setComment] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
 
   const handleToggleItem = (item: string) => {
     setSelectedItems(prev =>
@@ -22,18 +25,31 @@ export default function MissingItems({ reports, addReport, updateReport, rooms }
     );
   };
 
+  const handlePhotoFileChange = (file: File | null) => {
+    if (!file) return;
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = () => {
     if (roomNumber && selectedSteward && selectedItems.length > 0) {
       addReport({
         roomNumber,
         steward: selectedSteward,
         items: selectedItems,
-        comment
+        comment,
+        photo: photoFile ?? photoPreviewUrl
       });
       setRoomNumber("");
       setSelectedSteward("");
       setSelectedItems([]);
       setComment("");
+      setPhotoFile(null);
+      setPhotoPreviewUrl(null);
     }
   };
 
@@ -138,6 +154,31 @@ export default function MissingItems({ reports, addReport, updateReport, rooms }
               rows={3}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 resize-none"
             />
+          </div>
+
+          {/* Photo */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-2">Photo</label>
+            <div className="space-y-3">
+              <label className="group cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-slate-400">
+                <Camera className="w-5 h-5 text-slate-500" />
+                <span>{photoPreviewUrl ? "Change uploaded image" : "Upload image from gallery"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handlePhotoFileChange(e.target.files?.[0] ?? null)}
+                />
+              </label>
+
+              {photoPreviewUrl && (
+                <img
+                  src={photoPreviewUrl}
+                  alt="Missing item preview"
+                  className="w-full max-h-64 rounded-2xl object-cover border border-slate-200"
+                />
+              )}
+            </div>
           </div>
 
           {/* Submit Button */}

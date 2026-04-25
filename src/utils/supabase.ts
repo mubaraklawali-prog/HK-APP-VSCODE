@@ -23,6 +23,73 @@ export type MissingItemReportRow = Database["public"]["Tables"]["missing_items_r
 export type MissingItemReportInsert = Database["public"]["Tables"]["missing_items_reports"]["Insert"];
 export type MissingItemReportUpdate = Database["public"]["Tables"]["missing_items_reports"]["Update"];
 
+export const REPORT_IMAGE_BUCKET = "report-images";
+
+export async function uploadReportImage(file: File | Blob, path: string) {
+  const { data, error } = await supabase.storage
+    .from(REPORT_IMAGE_BUCKET)
+    .upload(path, file, { cacheControl: "3600", upsert: true });
+
+  if (error) throw error;
+
+  const { data: urlData, error: urlError } = await supabase.storage
+    .from(REPORT_IMAGE_BUCKET)
+    .getPublicUrl(path);
+
+  if (urlError) throw urlError;
+  return urlData.publicUrl;
+}
+
+
+
+export async function fetchMissingItemReports() {
+  try {
+    const { data, error } = await supabase
+      .from("missing_items_reports")
+      .select("*")
+      .order("timestamp", { ascending: false });
+
+    if (error) throw error;
+    return data as MissingItemReportRow[];
+  } catch (error) {
+    console.error("Error fetching missing item reports:", error);
+    throw error;
+  }
+}
+
+export async function createMissingItemReport(report: MissingItemReportInsert) {
+  try {
+    const { data, error } = await supabase
+      .from("missing_items_reports")
+      .insert([report])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as MissingItemReportRow;
+  } catch (error) {
+    console.error("Error creating missing item report:", error);
+    throw error;
+  }
+}
+
+export async function updateMissingItemReport(id: string, updates: MissingItemReportUpdate) {
+  try {
+    const { data, error } = await supabase
+      .from("missing_items_reports")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as MissingItemReportRow;
+  } catch (error) {
+    console.error("Error updating missing item report:", error);
+    throw error;
+  }
+}
+
 // Rooms CRUD operations
 export async function fetchRooms() {
   try {
@@ -135,34 +202,3 @@ export async function updateMaintenanceReport(id: string, updates: MaintenanceRe
   }
 }
 
-// Missing items reports CRUD operations
-export async function fetchMissingItemReports() {
-  try {
-    const { data, error } = await supabase
-      .from("missing_items_reports")
-      .select("*")
-      .order("timestamp", { ascending: false });
-    
-    if (error) throw error;
-    return data as MissingItemReportRow[];
-  } catch (error) {
-    console.error("Error fetching missing item reports:", error);
-    throw error;
-  }
-}
-
-export async function createMissingItemReport(report: MissingItemReportInsert) {
-  try {
-    const { data, error } = await supabase
-      .from("missing_items_reports")
-      .insert([report])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as MissingItemReportRow;
-  } catch (error) {
-    console.error("Error creating missing item report:", error);
-    throw error;
-  }
-}

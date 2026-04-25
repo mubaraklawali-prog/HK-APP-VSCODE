@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS missing_items_reports (
   steward TEXT NOT NULL,
   items TEXT[] NOT NULL,
   comment TEXT,
+  photo_url TEXT,
+  provided BOOLEAN DEFAULT FALSE,
+  provided_at TIMESTAMP,
   timestamp TIMESTAMP DEFAULT now()
 );
 

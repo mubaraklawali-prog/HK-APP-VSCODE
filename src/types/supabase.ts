@@ -46,6 +46,9 @@ export type Database = {
           comment: string | null
           id: string
           items: string[]
+          photo_url: string | null
+          provided: boolean
+          provided_at: string | null
           room_number: string
           steward: string
           timestamp: string | null
@@ -54,6 +57,9 @@ export type Database = {
           comment?: string | null
           id?: string
           items: string[]
+          photo_url?: string | null
+          provided?: boolean
+          provided_at?: string | null
           room_number: string
           steward: string
           timestamp?: string | null
@@ -62,6 +68,9 @@ export type Database = {
           comment?: string | null
           id?: string
           items?: string[]
+          photo_url?: string | null
+          provided?: boolean
+          provided_at?: string | null
           room_number?: string
           steward?: string
           timestamp?: string | null

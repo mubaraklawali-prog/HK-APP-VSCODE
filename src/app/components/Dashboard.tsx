@@ -16,84 +16,76 @@ export default function Dashboard({ rooms, maintenanceReports = [] }: DashboardP
   const getFloorStats = (floor: number) => {
     const floorRooms = getFloorRooms(floor);
     const cleaned = floorRooms.filter(r => r.status === "Cleaned").length;
-    const inProgress = floorRooms.filter(r => r.status === "In Progress").length;
-    const notCleaned = floorRooms.filter(r => r.status === "Checkout").length;
-    const activeIssues = floorRooms.filter(r => r.status === "Active Issues").length;
     const occupied = floorRooms.filter(r => r.status === "Occupied").length;
     const occupiedPercentage = floorRooms.length ? Math.round((occupied / floorRooms.length) * 100) : 0;
 
-    return { total: floorRooms.length, cleaned, inProgress, notCleaned, activeIssues, occupied, occupiedPercentage };
-  };
-
-  const getFloorMaintenanceCount = (floor: number) => {
-    const floorRoomNumbers = getFloorRooms(floor).map(r => r.number);
-    return maintenanceReports.filter(r => r.status !== "Resolved" && floorRoomNumbers.includes(r.roomNumber)).length;
+    return { total: floorRooms.length, cleaned, occupied, occupiedPercentage };
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-[28px] bg-white p-5 shadow-sm">
-          <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Total Rooms</div>
-          <div className="mt-4 text-4xl font-semibold text-slate-900 sm:text-5xl">{totalRooms}</div>
-        </div>
-
-        <div className="rounded-[28px] bg-white p-5 shadow-sm">
-          <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Total Occupied</div>
-          <div className="mt-4 text-4xl font-semibold text-emerald-700 sm:text-5xl">{occupiedRooms}</div>
-        </div>
-
-        <div className="rounded-[28px] bg-white p-5 shadow-sm">
-          <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Total Active Issues</div>
-          <div className="mt-4 text-4xl font-semibold text-rose-600 sm:text-5xl">{totalActiveIssues}</div>
-        </div>
-      </div>
-
-      <section className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Floor Overview</h2>
-            <p className="mt-1 text-sm text-slate-500">Review occupancy and room progress by floor.</p>
+    <div className="space-y-4">
+      {/* Summary Layout */}
+      <section className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          {/* Total Rooms */}
+          <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-slate-100">
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 className="w-4 h-4 text-slate-400" />
+              <span className="text-[11px] font-semibold text-slate-500">Total Rooms</span>
+            </div>
+            <span className="text-3xl font-extrabold tracking-tight text-on-surface">{totalRooms}</span>
+          </div>
+          {/* Total Occupied */}
+          <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-slate-100">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-primary fill-current" />
+              <span className="text-[11px] font-semibold text-slate-500">Total Occupied</span>
+            </div>
+            <span className="text-3xl font-extrabold tracking-tight text-primary">{occupiedRooms}</span>
           </div>
         </div>
+        {/* Active Issues */}
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="w-4 h-4 text-secondary fill-current" />
+            <span className="text-[11px] font-semibold text-slate-500">Total Active Issues</span>
+          </div>
+          <span className="text-3xl font-extrabold tracking-tight text-secondary">{totalActiveIssues}</span>
+        </div>
+      </section>
 
-        <div className="space-y-4">
+      {/* Floor Overview Section */}
+      <section className="space-y-4 pt-2">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-lg font-bold text-slate-800">Floor Overview</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
           {[0, 1, 2, 3].map(floor => {
             const stats = getFloorStats(floor);
-            const detailRows = [
-              { label: "Occupied", value: stats.occupied },
-              { label: "Cleaned", value: stats.cleaned },
-              { label: "Active Issues", value: stats.activeIssues },
-              { label: "Checkout", value: stats.notCleaned },
-              { label: "In Progress", value: stats.inProgress }
-            ].filter(row => row.value > 0);
-
             return (
-              <div key={floor} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div key={floor} className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-slate-50">
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{floorLabel(floor)}</p>
-                    <p className="mt-1 text-sm text-slate-500">{stats.total} rooms</p>
+                    <h3 className="text-base font-bold text-slate-800">{floorLabel(floor)}</h3>
+                    <p className="text-xs text-slate-500">{stats.total} rooms</p>
                   </div>
-                  <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
-                    {stats.occupiedPercentage}% occupied
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">OCCUPIED</p>
+                    <span className="text-xl font-extrabold text-primary leading-none">{stats.occupiedPercentage}%</span>
                   </div>
                 </div>
-
-                <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full rounded-full bg-slate-900 transition-all duration-300"
-                    style={{ width: `${stats.occupiedPercentage}%` }}
-                  />
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-5">
+                  <div className="bg-primary h-full rounded-full" style={{ width: `${stats.occupiedPercentage}%` }}></div>
                 </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {detailRows.map((row) => (
-                    <div key={row.label} className="flex items-center justify-between text-sm text-slate-700">
-                      <span>{row.label}</span>
-                      <span className="font-semibold text-slate-900">{row.value}</span>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <Users className="w-4 h-4 text-primary fill-current" />
+                    <p className="text-[13px] font-medium text-slate-600"><span className="font-bold text-slate-800">{stats.occupied}</span> Occupied</p>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-yellow-500 fill-current" />
+                    <p className="text-[13px] font-medium text-slate-600"><span className="font-bold text-slate-800">{stats.cleaned}</span> Cleaned</p>
+                  </div>
                 </div>
               </div>
             );
