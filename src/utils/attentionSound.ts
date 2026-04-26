@@ -59,21 +59,26 @@ function playChime(ctx: AudioContext): void {
   playTone(ctx, 1174, t + 0.14, 0.14);
 }
 
+function playSimpleTone(ctx: AudioContext): void {
+  const t = ctx.currentTime;
+  playTone(ctx, 660, t, 0.08);
+}
+
 /**
- * Short two-tone chime. Resumes AudioContext if needed (e.g. after user gesture on submit).
+ * Simple single-tone notification sound for maintenance reports.
  */
-export function playAttentionSound(): void {
+export function playNotificationSound(): void {
   const ctx = getContext();
   if (!ctx) return;
 
   if (ctx.state === "running") {
-    playChime(ctx);
+    playSimpleTone(ctx);
     return;
   }
 
   void ctx.resume().then(() => {
     if (ctx.state === "running") {
-      playChime(ctx);
+      playSimpleTone(ctx);
     }
   });
 }

@@ -29,6 +29,7 @@ const issueIcons: Record<IssueType, React.ElementType> = {
 export default function MaintenanceLog({ reports, addReport, updateReport, rooms }: MaintenanceLogProps) {
   const [showForm, setShowForm] = useState(false);
   const [roomNumber, setRoomNumber] = useState("");
+  const [roomSearch, setRoomSearch] = useState("");
   const [issueType, setIssueType] = useState<IssueType | null>(null);
   const [description, setDescription] = useState("");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
 
   const resetNewReportForm = () => {
     setRoomNumber("");
+    setRoomSearch("");
     setIssueType(null);
     setDescription("");
     setPhotoDataUrl(null);
@@ -104,6 +106,15 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
       setShowForm(false);
     }
   };
+
+  const roomSearchLower = roomSearch.trim().toLowerCase();
+  const filteredRooms = rooms
+    .slice()
+    .sort((a, b) => Number(a.number) - Number(b.number))
+    .filter(room => {
+      if (!roomSearchLower) return true;
+      return room.number.includes(roomSearchLower) || floorLabel(room.floor).toLowerCase().includes(roomSearchLower);
+    });
 
   const handleStatusChange = (id: string, status: MaintenanceStatus) => {
     const updates: Partial<MaintenanceReport> = { status };
@@ -227,18 +238,43 @@ export default function MaintenanceLog({ reports, addReport, updateReport, rooms
               {/* Room Number */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Room Number</label>
-                <select
-                  value={roomNumber}
-                  onChange={(e) => setRoomNumber(e.target.value)}
+                <input
+                  type="text"
+                  value={roomSearch}
+                  onChange={(e) => {
+                    setRoomSearch(e.target.value);
+                    setRoomNumber("");
+                  }}
+                  placeholder="Search room number or floor..."
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
-                >
-                  <option value="">Select room...</option>
-                  {rooms.map(room => (
-                    <option key={room.id} value={room.number}>
-                      Room {room.number} - {floorLabel(room.floor)}
-                    </option>
-                  ))}
-                </select>
+                />
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 max-h-48 overflow-y-auto">
+                  {filteredRooms.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-slate-500">No rooms found.</div>
+                  ) : (
+                    filteredRooms.map(room => (
+                      <button
+                        key={room.id}
+                        type="button"
+                        onClick={() => {
+                          setRoomNumber(room.number);
+                          setRoomSearch(room.number);
+                        }}
+                        className={`w-full text-left px-4 py-3 border-b last:border-b-0 transition-colors hover:bg-white ${roomNumber === room.number ? "bg-white" : "bg-slate-50"}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-semibold text-slate-800">Room {room.number}</div>
+                            <div className="text-xs text-slate-500">{floorLabel(room.floor)}</div>
+                          </div>
+                          {roomNumber === room.number && (
+                            <div className="text-[11px] font-semibold text-slate-600">Selected</div>
+                          )}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
 
               {/* Issue Type */}

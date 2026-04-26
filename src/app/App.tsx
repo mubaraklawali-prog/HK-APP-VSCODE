@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { LayoutDashboard, ClipboardList, Wrench, PackageSearch, Sparkles, Search, Bell } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Wrench, PackageSearch, Sparkles, Search, Bell, X } from "lucide-react";
 import Dashboard from "@/app/components/Dashboard";
 import TaskTracker from "@/app/components/TaskTracker";
 import MaintenanceLog from "@/app/components/MaintenanceLog";
@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import {
   REMINDER_MS,
-  playAttentionSound,
+  playNotificationSound,
   attachAttentionAudioUnlockOnFirstGesture
 } from "@/utils/attentionSound";
 import {
@@ -296,6 +296,8 @@ export default function App() {
   const [maintenanceReports, setMaintenanceReports] = useState<MaintenanceReport[]>([]);
   const [missingItemReports, setMissingItemReports] = useState<MissingItemReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
   const { toast } = useToast();
 
   const maintenanceReportsRef = useRef(maintenanceReports);
@@ -345,6 +347,21 @@ export default function App() {
     missingItemReportsRef.current = missingItemReports;
   });
 
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (showNotifications && !target.closest('.notification-panel') && !target.closest('.notification-button')) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showNotifications]);
+
   useEffect(() => {
     attachAttentionAudioUnlockOnFirstGesture();
   }, []);
@@ -357,7 +374,7 @@ export default function App() {
       const hasOpenMaintenance = maint.some(r => r.status !== "Resolved");
       const hasMissingItems = missing.length > 0;
       if (hasOpenMaintenance || hasMissingItems) {
-        playAttentionSound();
+        playNotificationSound();
       }
     }, REMINDER_MS);
     return () => window.clearInterval(id);
@@ -433,7 +450,7 @@ export default function App() {
       }
 
       setMaintenanceReports(prev => [appReport, ...prev]);
-      playAttentionSound();
+      playNotificationSound();
     } catch (error) {
       console.error("Error creating maintenance report:", error);
       // Fallback to local creation
@@ -444,7 +461,7 @@ export default function App() {
         photo: typeof report.photo === "string" ? report.photo : null
       };
       setMaintenanceReports(prev => [newReport, ...prev]);
-      playAttentionSound();
+      playNotificationSound();
     }
   };
 
@@ -613,11 +630,80 @@ export default function App() {
           <button className="p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
             <Search className="w-5 h-5" />
           </button>
-          <button className="p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="notification-button relative p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
+          >
             <Bell className="w-5 h-5" />
+            {notificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                {notificationCount > 99 ? '99+' : notificationCount}
+              </span>
+            )}
           </button>
         </div>
       </header>
+
+      {/* Notification Panel */}
+      {showNotifications && (
+        <div className="notification-panel absolute top-16 right-4 bg-white rounded-2xl shadow-lg border border-slate-200 p-4 z-50 w-80 max-h-96 overflow-y-auto">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-800">Notifications</h3>
+            <button
+              onClick={() => setShowNotifications(false)}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {notificationCount === 0 ? (
+              <div className="text-center py-4">
+                <div className="text-slate-400 text-sm">No notifications</div>
+              </div>
+            ) : (
+              <>
+                {maintenanceReports.filter(r => r.status === "Pending").length > 0 && (
+                  <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-semibold text-amber-800">Pending Maintenance</div>
+                      <div className="text-xs text-amber-700">
+                        {maintenanceReports.filter(r => r.status === "Pending").length} maintenance {maintenanceReports.filter(r => r.status === "Pending").length === 1 ? 'request' : 'requests'} need attention
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {missingItemReports.filter(r => !r.provided).length > 0 && (
+                  <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-xl border border-orange-200">
+                    <PackageSearch className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-semibold text-orange-800">Missing Items</div>
+                      <div className="text-xs text-orange-700">
+                        {missingItemReports.filter(r => !r.provided).length} missing item {missingItemReports.filter(r => !r.provided).length === 1 ? 'request' : 'requests'} outstanding
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {rooms.filter(r => r.status === "Active Issues").length > 0 && (
+                  <div className="flex items-start gap-3 p-3 bg-red-50 rounded-xl border border-red-200">
+                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-semibold text-red-800">Active Issues</div>
+                      <div className="text-xs text-red-700">
+                        {rooms.filter(r => r.status === "Active Issues").length} room{rooms.filter(r => r.status === "Active Issues").length === 1 ? '' : 's'} marked as active issues
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <main className="px-4 py-2 max-w-7xl mx-auto space-y-4">
         {loading ? (
@@ -647,7 +733,7 @@ export default function App() {
                 rooms={rooms}
               />
             )}
-            {activeTab === "ai" && <AIReport rooms={rooms} maintenanceReports={maintenanceReports} />}
+            {activeTab === "ai" && <AIReport rooms={rooms} maintenanceReports={maintenanceReports} missingItemReports={missingItemReports} />}
           </>
         )}
       </main>

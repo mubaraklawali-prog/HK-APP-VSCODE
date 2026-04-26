@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Camera } from "lucide-react";
 import { MissingItemReport, Room, stewards, availableItems, floorLabel } from "@/app/App";
+import { useToast } from "@/hooks/use-toast";
 
 interface MissingItemsProps {
   reports: MissingItemReport[];
@@ -16,6 +17,8 @@ export default function MissingItems({ reports, addReport, updateReport, rooms }
   const [comment, setComment] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleToggleItem = (item: string) => {
     setSelectedItems(prev =>
@@ -53,12 +56,30 @@ export default function MissingItems({ reports, addReport, updateReport, rooms }
     }
   };
 
-  const handleMarkProvided = (id: string) => {
+  const handleMarkProvided = async (id: string) => {
     const updates: Partial<MissingItemReport> = {
       provided: true,
       providedAt: new Date()
     };
-    updateReport(id, updates);
+
+    setProcessingId(id);
+    try {
+      await updateReport(id, updates);
+      toast({
+        title: "Missing items marked provided",
+        description: "This request is now recorded as provided.",
+        variant: "success"
+      });
+    } catch (error) {
+      console.error("Error marking missing items provided:", error);
+      toast({
+        title: "Unable to mark provided",
+        description: "Please try again or refresh the page.",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -206,9 +227,10 @@ export default function MissingItems({ reports, addReport, updateReport, rooms }
                 ) : (
                   <button
                     onClick={() => handleMarkProvided(report.id)}
-                    className="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                    disabled={processingId === report.id}
+                    className="text-[11px] font-semibold px-2 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Mark Provided
+                    {processingId === report.id ? "Providing..." : "Mark Provided"}
                   </button>
                 )}
                 <div className="text-[11px] text-slate-400">{report.steward}</div>

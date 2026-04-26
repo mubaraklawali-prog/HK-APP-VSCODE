@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Sparkles, AlertCircle, Copy, Check, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { Room, MaintenanceReport } from "@/app/App";
+import { Room, MaintenanceReport, MissingItemReport } from "@/app/App";
 
 interface AIReportProps {
   rooms: Room[];
   maintenanceReports: MaintenanceReport[];
+  missingItemReports: MissingItemReport[];
 }
 
-export default function AIReport({ rooms, maintenanceReports }: AIReportProps) {
+export default function AIReport({ rooms, maintenanceReports, missingItemReports }: AIReportProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -41,6 +42,8 @@ export default function AIReport({ rooms, maintenanceReports }: AIReportProps) {
   const checkoutRooms = rooms.filter(r => r.status === "Checkout").length;
   const inProgressRooms = rooms.filter(r => r.status === "In Progress").length;
   const activeIssuesRooms = maintenanceReports.filter(r => r.status !== "Resolved").length;
+  const missingRequests = missingItemReports.length;
+  const providedMissing = missingItemReports.filter(r => r.provided).length;
 
   const formatDateRange = () => {
     const formatDate = (date: Date) => {
@@ -131,6 +134,11 @@ export default function AIReport({ rooms, maintenanceReports }: AIReportProps) {
         return reportDate >= fromDate && reportDate <= toDate;
       });
 
+        const missingInRange = missingItemReports.filter(r => {
+          const reportDate = new Date(r.timestamp);
+          return reportDate >= fromDate && reportDate <= toDate;
+        });
+
         // Generate a mock report based on actual data and date range
         const totalRooms = rooms.length;
         const cleanedRooms = rooms.filter(r => r.status === "Cleaned").length;
@@ -141,6 +149,9 @@ export default function AIReport({ rooms, maintenanceReports }: AIReportProps) {
         const pendingMaintenance = reportsInRange.filter(r => r.status === "Pending").length;
         const inProgressMaintenance = reportsInRange.filter(r => r.status === "In Progress").length;
         const resolvedMaintenance = reportsInRange.filter(r => r.status === "Resolved").length;
+        const missingRequestsInRange = missingInRange.length;
+        const providedMissingInRange = missingInRange.filter(r => r.provided).length;
+        const outstandingMissingInRange = missingRequestsInRange - providedMissingInRange;
 
         const daysDiff = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
@@ -178,9 +189,8 @@ ${reportsInRange.length > 0 ? `- ⏳ **Pending**: ${pendingMaintenance} ${pendin
 - 🔧 **In Progress**: ${inProgressMaintenance} ${inProgressMaintenance === 1 ? 'task' : 'tasks'}
 - ✅ **Resolved**: ${resolvedMaintenance} ${resolvedMaintenance === 1 ? 'issue' : 'issues'}` : '- No maintenance reports during this period'}
 
-${reportsInRange.length > 0 ? `**Resolution Rate**: ${Math.round((resolvedMaintenance / reportsInRange.length) * 100)}% of issues resolved` : ''}
-
-## Key Insights & Recommendations
+${missingRequestsInRange > 0 ? `- 📦 **Missing Requests**: ${missingRequestsInRange}
+- ✅ **Provided**: ${providedMissingInRange}` : ''}
 
 ${activeIssuesRooms > 5 ? '- 🔴 **Critical**: ' + activeIssuesRooms + ' rooms marked "Active Issues" - prioritize immediate action' : ''}
 ${checkoutRooms > 10 ? '- 🚪 **High Priority**: ' + checkoutRooms + ' checkout rooms waiting for cleaning service' : ''}
@@ -220,7 +230,7 @@ ${cleanedRooms / totalRooms > 0.7 ? '- ✨ Excellent housekeeping performance! K
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
           <div className="bg-slate-50 rounded-2xl p-3 text-center">
             <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] mb-1">Total Rooms</div>
             <div className="text-lg font-semibold text-slate-900">{totalRooms}</div>
@@ -236,6 +246,14 @@ ${cleanedRooms / totalRooms > 0.7 ? '- ✨ Excellent housekeeping performance! K
           <div className="bg-slate-50 rounded-2xl p-3 text-center">
             <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] mb-1">Active Issues</div>
             <div className="text-lg font-semibold text-slate-900">{activeIssuesRooms}</div>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] mb-1">Missing Requests</div>
+            <div className="text-lg font-semibold text-slate-900">{missingRequests}</div>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] mb-1">Provided</div>
+            <div className="text-lg font-semibold text-slate-900">{providedMissing}</div>
           </div>
         </div>
       </div>

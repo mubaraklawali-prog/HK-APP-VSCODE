@@ -17,9 +17,11 @@ export default function Dashboard({ rooms, maintenanceReports = [] }: DashboardP
     const floorRooms = getFloorRooms(floor);
     const cleaned = floorRooms.filter(r => r.status === "Cleaned").length;
     const occupied = floorRooms.filter(r => r.status === "Occupied").length;
+    const checkout = floorRooms.filter(r => r.status === "Checkout").length;
+    const inProgress = floorRooms.filter(r => r.status === "In Progress").length;
     const occupiedPercentage = floorRooms.length ? Math.round((occupied / floorRooms.length) * 100) : 0;
 
-    return { total: floorRooms.length, cleaned, occupied, occupiedPercentage };
+    return { total: floorRooms.length, cleaned, occupied, checkout, inProgress, occupiedPercentage };
   };
 
   return (
@@ -78,14 +80,35 @@ export default function Dashboard({ rooms, maintenanceReports = [] }: DashboardP
                   <div className="bg-primary h-full rounded-full" style={{ width: `${stats.occupiedPercentage}%` }}></div>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2.5">
-                    <Users className="w-4 h-4 text-primary fill-current" />
-                    <p className="text-[13px] font-medium text-slate-600"><span className="font-bold text-slate-800">{stats.occupied}</span> Occupied</p>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-yellow-500 fill-current" />
-                    <p className="text-[13px] font-medium text-slate-600"><span className="font-bold text-slate-800">{stats.cleaned}</span> Cleaned</p>
-                  </div>
+                  {[
+                    {
+                      value: stats.occupied,
+                      label: "Occupied",
+                      icon: <Users className="w-4 h-4 text-primary fill-current" />
+                    },
+                    {
+                      value: stats.checkout,
+                      label: "Checkout",
+                      icon: <LogOut className="w-4 h-4 text-slate-700" />
+                    },
+                    {
+                      value: stats.inProgress,
+                      label: "In Progress",
+                      icon: <Clock className="w-4 h-4 text-amber-500" />
+                    },
+                    {
+                      value: stats.cleaned,
+                      label: "Cleaned",
+                      icon: <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-current" />
+                    }
+                  ].filter(item => item.value > 0).map(item => (
+                    <div key={item.label} className="flex items-center gap-2.5">
+                      {item.icon}
+                      <p className="text-[13px] font-medium text-slate-600">
+                        <span className="font-bold text-slate-800">{item.value}</span> {item.label}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             );

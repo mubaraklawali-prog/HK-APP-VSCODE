@@ -76,7 +76,7 @@ export default function TaskTracker({ rooms, updateRoom }: TaskTrackerProps) {
       </div>
 
       {/* Room Grid */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {filteredRooms.map(room => {
           const colors = getStatusColors(room.status);
           return (
